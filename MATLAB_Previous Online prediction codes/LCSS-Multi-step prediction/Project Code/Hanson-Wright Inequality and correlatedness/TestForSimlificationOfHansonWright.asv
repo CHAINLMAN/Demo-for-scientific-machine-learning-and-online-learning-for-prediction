@@ -1,0 +1,100 @@
+times = 100;
+
+N = 700;
+
+p = 30;
+
+rho = 0.51;
+
+R = 4;
+
+Correlated = 0;
+CorreEach = zeros(1,times);
+Unrelated = 0;
+UnreEach = zeros(1,times);
+
+flagC = 0;
+flagU = 0;
+Tinit = 50;
+
+tic
+for i = 1:times
+
+    MartingaleC = zeros(1,N);
+    MartingaleN = zeros(1,N);
+
+    [y,e] = Autoregressive(N,0,R,rho);
+
+    Y = Augment(y,N,p);
+
+    z = 10000 * rand(1,N);
+
+    MidCor = pinv(Y * Y');
+    Cross = e(p:N) * Y';
+    subCor = Cross * MidCor * Cross';
+    CorreEach(i) = subCor;
+
+    Z = Augment(z,N,p);
+    MidUn = pinv(Z * Z');
+    Cross = e(p:N) * Z';
+    subUn = Cross * MidUn * Cross';
+    UnreEach(i) = subUn;
+
+
+    for j = Tinit:N
+
+        YTrunc = Y(:,1:j);
+        eTrunc = e(:,1:j);
+        ZTrunc
+    end
+
+    Correlated = Correlated + subCor;
+    Unrelated = Unrelated + subUn;
+
+    if subCor > subUn
+        flagC = flagC + 1;
+    end
+
+    if subCor < subUn
+        flagU = flagU + 1;
+    end
+
+end
+
+Correlated = Correlated/times
+
+Unrelated = Unrelated/times
+
+% flagC
+% flagU
+tspan = toc;
+
+
+
+
+
+tag = 1:1:times;
+
+plot(tag,CorreEach);
+hold on
+plot(tag,UnreEach);
+
+
+
+
+
+
+function Aug = Augment(y,N,p)
+    
+     Aug = zeros(p,N-p+1);
+
+     for i = 1:N-p+1
+
+         Aug(:,i) = y(i:i+p-1)';
+     
+     end
+
+end
+
+
+

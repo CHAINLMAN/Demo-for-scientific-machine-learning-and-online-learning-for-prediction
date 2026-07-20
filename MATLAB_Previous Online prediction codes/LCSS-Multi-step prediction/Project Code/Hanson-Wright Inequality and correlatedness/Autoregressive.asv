@@ -1,0 +1,27 @@
+function [y,e] = Autoregressive(N,y0,R,rho)
+
+y = zeros(1,N);
+
+e = zeros(1,N);
+
+y(1) = y0;
+
+e(1) = sqrt(R) * randn(1);
+
+Rho = zeros(1,N);
+
+for i = 1 : N
+    
+    Rho(i) = 
+
+end
+
+for i = 2:N
+
+    y(i) = rho * y(i-1) + e(i-1);
+
+    e(i) = sqrt(R) * randn(1);
+
+end
+
+end

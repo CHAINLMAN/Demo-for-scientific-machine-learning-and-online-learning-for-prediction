@@ -1,0 +1,117 @@
+% Ablk = [0.9,1,0;0,0.9,1;0,0,0.9];
+Ablk = [0.8];
+A = blkdiag(Ablk);
+B = [3]';
+[dimA,~] = size(A);
+[~,dimu] = size(B);
+
+W = rand(dimA);
+W = orth(W);
+D1 = eye(dimA);
+Mid = D1;
+Q = 0.1*W*Mid*W';
+
+C = eye(dimA);
+[dimC,~] = size(C);
+R = zeros(dimA);
+
+H = 10;
+
+step = 10000;
+
+x0 = rand(dimA,1);
+
+[y,u,x] = ProcessWithU(A,B,C,Q,R,x0,step);
+
+Sample = zeros(dimA+H*dimu,step);
+
+Target = zeros(H*dimC);
+
+Gstar = zeros(H*dimA,dimA+H*dimu);
+
+for i = 1:H
+
+    Gstar((i-1)*dimA+1:i*dimA,1:dimA) = A^i;
+
+    for j = 2:i+1
+
+        Gstar((i-1)*dimA+1:i*dimA,(j-2)*dimu+dimA+1:(j-1)*dimu+dimA) = A^(i+1-j)*B;
+
+    end
+
+end
+
+
+Loss = zeros(1,step);
+LossS = zeros(1,step);
+
+for i = 1:step-H
+
+    zz = zeros(H*dimC,1);
+
+    for l = 1:H
+
+        zz((l-1)*dimC+1:l*dimC,1) = y(:,i+l);
+
+    end
+
+    Target(:,i) = zz;
+
+    zu = zeros(dimA+H*dimu,1);
+
+    zu(1:dimA) = y(:,i);
+
+    for l = 1:H
+
+         zu((l-1)*dimu+dimA+1:l*dimu+dimA,1) = u(:,i+l-1);
+    end
+
+    Sample(:,i) = zu; 
+
+    TruncTarget = Target(:,1:i);
+
+    TruncSample = Sample(:,1:i);
+
+    G = TruncTarget * TruncSample' * pinv(TruncSample * TruncSample');
+
+
+    Loss(i) = norm(G - Gstar)^2;
+
+    TrunTargetS = y(:,2:i);
+
+    TrunSample = [y(:,1:i-1);u(:,1:i-1)];
+
+    GS = TruncTarget * TruncSample' * pinv(TruncSample * TruncSample');
+
+    Gy = GS(1:dimC,1:dimC);
+
+    Gu = GS(1:dimC,dimC+1:dimC+dimu);
+
+    GSAug = zeros(H*dimA,dimA+H*dimu);
+
+    for l = 1:H
+
+    GSAug((l-1)*dimC+1:l*dimC,1:dimC) = Gy^l;
+
+    for j = 2:l+1
+
+        GSAug((l-1)*dimC+1:l*dimC,(j-2)*dimu+dimA+1:(j-1)*dimu+dimA) = Gy^(l+1-j)*B;
+
+    end
+
+end
+
+end
+
+
+
+
+figure(1)
+tag = 1:1:step;
+plot(tag,x)
+
+figure(2)
+converge = tag.*Loss;
+horizon = 13:3000;
+plot(tag(horizon),converge(horizon),'LineWidth',5)
+grid on

@@ -1,0 +1,14 @@
+Scale = 1000;
+times = 100;
+N = 1000;
+
+martin = zeros(times,Scale);
+
+for i = 1:Scale
+
+    for j = 1:times
+
+        e = sqrt(i)*randn(1,N);
+
+        martin(j,i) = e(2:N)*
+

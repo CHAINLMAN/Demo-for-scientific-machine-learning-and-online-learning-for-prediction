@@ -1,0 +1,20 @@
+e1 = randn(1,N);
+
+e2 = randn(1,N);
+
+e3 = randn(1,N);
+
+cc = zeros(1,N);
+
+bias = 0;
+
+
+for i = 1:N
+
+    cc(i) = e3(i)*(e1(i)+e2(i))/sqrt((bias+e1(i))^2+(bias+e1(i)+e2(i))^2);
+
+end
+
+sum(cc)/N
+
+e1*e2'/N
