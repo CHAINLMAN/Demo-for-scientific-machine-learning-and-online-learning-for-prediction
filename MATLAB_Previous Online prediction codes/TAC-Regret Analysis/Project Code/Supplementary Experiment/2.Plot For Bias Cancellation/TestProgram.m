@@ -1,0 +1,83 @@
+dim = 9;
+m = 3;
+tic
+% A = rand(dim);
+% A = 1/max(abs(eig(A)))*A;%normalization
+% T = 0.1;
+% A = [1,T,0;0,1,T;0,0,1];
+% C = rand(m,dim);
+% Q = diag([T^2,T^2/2,T]);
+% R = T^2 * eye(m);
+P0 = dare(A',C',Q,R);
+L = A * P0 * C' * pinv(C * P0 * C' + R);
+feedback = A - L*C;
+
+lambda = 1;
+N = Tini * (power(2,Epoh));
+x0 = zeros(dim,1);
+
+%obtian data
+[xstate] = Process(A,Q,x0,N);
+[y] = observationProcess(xstate,C,R);
+[yh,sigma2,Pc,xhat,fedA] = KalmanFilter(A,C,Q,R,y,x0);
+
+
+times = 21;
+plotD = zeros(2,times);
+for g = 1:times
+   beta = 1 + 0.2 * (g-1);
+   p = ceil(beta * log(N/2));
+   Z1 = zeros(p*m,N-p+1);
+   for i = 1:N-p+1
+      zz = zeros(m*p,1);
+      for l = 1:p
+        zz((l-1)*m+1:l*m,1) = y(:,i+p-l);
+      end
+      Z1(:,i) = zz;
+   end
+
+   V = cell(1,N/2);
+
+   for i = 1:N/2
+       Select = Z1(:,1:i+N/2-p-1);
+       V{1,i} = lambda * eye(m*p) + Select * Select';
+   end
+
+
+   Bias = zeros(m,N/2);
+
+   bx = C*fedA^p * xhat;
+
+   BiasAccumulation = cell(1,N/2);
+   % for i = 1:N/2
+   %    BiasAccumulation{1,i} = bx(:,1:i+N/2-p-1)*Z1(:,1:i+N/2-p-1)' * pinv(sqrtm(V{1,i}));
+   % end
+
+
+   for i = 1:N/2
+       Bias(:,i) = bx(:,1:i+N/2-p-1)*Z1(:,1:i+N/2-p-1)' * pinv(V{1,i}) * Z1(:,i+N/2-p);
+   end
+   
+   WholeBiasError = Bias - bx(:,N/2-p+1:N-p);
+   plotD(1,g) = norm(2/N*sum(abs(Bias(1:N/2))));
+   plotD(2,g) = norm(2/N*sum(abs(WholeBiasError),2));
+end
+
+% WholeBiasError = Bias - bx(:,N/2-p+1:N-p);
+% trace(WholeBiasError*WholeBiasError')
+% trace(Bias*Bias')
+% trace(Bias*Bias')/trace(WholeBiasError*WholeBiasError')
+% 
+% 
+% dd = zeros(1,p);
+% for i = 1:p
+%     dd(i) = (1/sigma2)^(i-1);
+% end
+% D = kron(diag(dd),eye(m));
+% 
+% trace(Z1'*pinv(lambda*eye(m*p)+Z1*Z1')*Z1)
+% trace(Z1'*pinv(lambda*eye(m*p)*D*D+Z1*Z1')*Z1)
+ 
+
+tspan = toc;
+

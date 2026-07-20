@@ -1,0 +1,84 @@
+VarianceOriginal = zeros(N-Tini,1);
+VarianceOptimal = zeros(N-Tini,1);
+VarianceRandom = zeros(N-Tini,1);
+scaling = 1.5;
+
+LW = 6;
+LWlabel = 2;
+fZ = 38;
+fZlegend = 33;
+fZlabel = 30;
+
+RegretOriginal = PerformReg-PerformKF;
+RegretOptimal = PerformForget1-PerformKF;
+RegretRandom = PerformForget2-PerformKF;
+
+AverageOri = 1/times * sum(RegretOriginal,2);
+AverageOpti = 1/times * sum(RegretOptimal,2);
+AverageRand = 1/times * sum(RegretRandom,2);
+
+% for i = 1:N-Tini
+%     VarianceOriginal(i) = SampleVariance(RegretOriginal(i,:),times);
+%     VarianceOptimal(i) = SampleVariance(RegretOptimal(i,:),times);
+%     VarianceRandom(i) = SampleVariance(RegretRandom(i,:),times);
+% end
+
+for i = 1:N-Tini
+    VarianceOriginal(i) = sqrt(var(RegretOriginal(i,:)));
+    VarianceOptimal(i) = sqrt(var(RegretOptimal(i,:)));
+    VarianceRandom(i) = sqrt(var(RegretRandom(i,:)));
+end
+
+
+URegretOriginal = AverageOri + scaling * VarianceOriginal;
+LRegretOriginal = AverageOri - scaling * VarianceOriginal;
+
+URegretOptimal = AverageOpti + scaling * VarianceOptimal;
+LRegretOptimal = AverageOpti - scaling * VarianceOptimal;
+
+URegretRand = AverageRand + scaling * VarianceRandom;
+LRegretRand = AverageRand - scaling * VarianceRandom;
+
+colorRed = 1/255*[169, 26, 22];
+colorSlightBlue = 1/255*[219,235,249];
+colorSlightPink = 1/255*[250, 227, 210];
+colorOrange = 1/255*[207,67,62];
+colorSlightYellow = 1/255*[245,224,224];
+SlightYellow = 1/255*[255,250,231];
+colorBlue = 1/255*[30, 135, 228];
+% figure(1)
+tag = 1:1:N-Tini;
+cc = log(tag).^3;
+% plot(tag,URegretOriginal')
+
+
+% plot(tag,LRegretOriginal')
+
+figure(2)
+% subplot(1,2,1)
+hold on
+region = Tini:1:N-Tini;
+fill([tag(region), fliplr(tag(region))], [LRegretOriginal(region)', fliplr(URegretOriginal(region)')],colorSlightPink,'EdgeColor','none');
+fill([tag(region), fliplr(tag(region))], [LRegretOptimal(region)', fliplr(URegretOptimal(region)')],colorSlightBlue,'EdgeColor','none');
+fill([tag(region), fliplr(tag(region))], [LRegretRand(region)', fliplr(URegretRand(region)')],colorSlightYellow,'EdgeColor','none');
+h1 = semilogy(tag(region),AverageOri(region),'-.k','LineWidth',LW);
+h3 = semilogy(tag(region),AverageOpti(region),'-','Color',colorBlue ,'LineWidth',LW);
+h2 = semilogy(tag(region),AverageRand(region),'-.','Color',colorRed,'LineWidth',LW);
+grid on
+% axis([120,1260,300,1000])
+ax = gca; % Get the current axes
+ax.GridLineStyle = '--';
+% set(gca, 'XTick', 120:60:1260, 'YTick', 300:100:1000)
+legend([h1,h2,h3],'$\gamma=1$','$\gamma=0.6$','$\gamma=\rho(A-LC)$','Interpreter','latex','Fontsize',fZlegend)
+legend('Location', 'best'); % Set legend position
+set(legend, 'Color', 'none')
+xlabel('Time Step','Interpreter','latex','Fontsize',fZ)
+ylabel('Regret','Interpreter','latex','Fontsize',fZ)
+
+% set(gcf, 'Color', 'none');
+set(gcf, 'Units', 'inches', 'Position', [1, 1, 16, 9]);
+ax = gca;
+ax.FontSize = fZlabel;
+set(gca,'TickLabelInterpreter','latex' ,'FontSize', fZ, 'LineWidth', LWlabel);
+set(gca,'Color','none');
+% set(gcf,'Color',SlightYellow);
