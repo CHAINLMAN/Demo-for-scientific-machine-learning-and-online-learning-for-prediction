@@ -1,0 +1,57 @@
+function [yh,G,outTag,Tagrecord] = RegressionFilterWithDelay(y,y1,beta,lambda,Tini,Epoh,gamma,d)
+    
+    N = Tini * (power(2,Epoh));
+    tol = 1e-20;
+    Tagrecord = cell(1,N);
+    [mn,~] = size(y);
+    [mm,~] = size(y1);
+    yh = zeros(mn,N);
+    yhh = zeros(mn,N);
+    outTag = zeros(2,N);
+    for i = 1:Epoh
+        T = power(2,i-1)*Tini+1;
+        p = beta * log(T);
+        p = ceil(p);
+        Tag = lambda * eye(mn*p+mm*(p-d));
+        % Ee = zeros(mn,mn*p);
+        G = zeros(mn,mn*p+mm*(p-d));
+        
+        %initialization
+        
+        for j = p+1:T
+            zz = zeros(mn*p+mm*(p-d),1);
+            for l = 1:p
+                zz((l-1)*mn+1:l*mn,1) = gamma^(l-1) * y(:,j-l);
+            end
+
+            for l = 1:p-d
+                zz(p*mn+(l-1)*mm+1:p*mn+l*mm,1) = gamma^(l-1) * y1(:,j-l-d);
+            end
+            Tag = Tag + zz*zz';
+            yhh(:,j) = G * zz; %double h means this prediction is not used
+            G = G + (y(:,j)-yhh(:,j)) * zz' * pinv(Tag,tol);
+        end
+        % G = Ee * pinv(Tag);
+        
+        for k = T:2*T-2
+            % ee = eig(Tag);
+            % outTag(1,k) = min(ee);
+            % outTag(2,k) = max(ee);
+            % Tagrecord{1,k} = Tag;
+            zz = zeros(mn*p+mm*(p-d),1);
+            for l = 1:p
+                zz((l-1)*mn+1:l*mn,1) = gamma^(l-1) * y(:,k-l);
+            end
+            for l = 1:p-d
+                zz(p*mn+(l-1)*mm+1:p*mn+l*mm,1) = gamma^(l-1) * y1(:,k-l-d);
+            end
+            yh(:,k) = G * zz;
+            Tag = Tag + zz*zz';
+            % Ee = Ee + y(:,k)*zz';
+            % G = Ee * pinv(Tag);
+
+            G = G + (y(:,k)-yh(:,k)) * zz' * pinv(Tag);
+        end
+    end
+    % outTag = Tag;
+end
